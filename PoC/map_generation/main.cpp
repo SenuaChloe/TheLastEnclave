@@ -14,6 +14,67 @@ typedef std::vector<std::vector<Biome>> Map;
 
 unsigned int get_neightboring_weight(Biome ref, Biome neigh)
 {
+  switch (ref)
+  {
+    case Biome::Plain:
+      switch (neigh) {
+        case Biome::Plain:
+          return 1;
+        case Biome::Forest:
+          return 1;
+        case Biome::Mountain:
+          return 1;
+        case Biome::Sea:
+          return 1;
+        default:
+          return 0;
+      }
+
+    case Biome::Forest:
+      switch (neigh) {
+        case Biome::Plain:
+          return 1;
+        case Biome::Forest:
+          return 1;
+        case Biome::Mountain:
+          return 1;
+        case Biome::Sea:
+          return 1;
+        default:
+          return 0;
+      }
+
+    case Biome::Mountain:
+      switch (neigh) {
+        case Biome::Plain:
+          return 1;
+        case Biome::Forest:
+          return 1;
+        case Biome::Mountain:
+          return 1;
+        case Biome::Sea:
+          return 1;
+        default:
+          return 0;
+      }
+
+    case Biome::Sea:
+      switch (neigh) {
+        case Biome::Plain:
+          return 1;
+        case Biome::Forest:
+          return 1;
+        case Biome::Mountain:
+          return 1;
+        case Biome::Sea:
+          return 1;
+        default:
+          return 0;
+      }
+
+    default:
+      return 0;
+  }
   return 1;
 }
 
