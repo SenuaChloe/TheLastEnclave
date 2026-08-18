@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <cstdlib>
+#include <ctime>
 #include <thread>
 #include <chrono>
 
@@ -13,10 +14,10 @@ enum class Biome {
 };
 
 
-const unsigned int WIDTH = 32;
-const unsigned int HEIGHT = 32;
-const unsigned int STARTING_X = 12;
-const unsigned int STARTING_Y = 12;
+const unsigned int WIDTH = 48;
+const unsigned int HEIGHT = 48;
+const unsigned int STARTING_X = 24;
+const unsigned int STARTING_Y = 24;
 const Biome STARTING_BIOME = Biome::Plain;
 
 typedef std::vector<std::vector<Biome>> Map;
@@ -135,15 +136,15 @@ std::string biome_to_char(Biome b)
 {
   switch (b) {
     case Biome::Plain:
-      return "\033[0m.\033[0m";
+      return "\033[0m. \033[0m";
     case Biome::Forest:
-      return "\033[32m|\033[0m";
+      return "\033[32m| \033[0m";
     case Biome::Mountain:
-      return "\033[33m^\033[0m";
+      return "\033[33m^ \033[0m";
     case Biome::Sea:
-      return "\033[36m~\033[0m";
+      return "\033[36m~ \033[0m";
     default:
-      return "\033[0m \033[0m";
+      return "\033[0m  \033[0m";
   }
 }
 
@@ -158,8 +159,8 @@ std::vector<std::pair<unsigned int, unsigned int>> get_all_coord_from_dist(unsig
 {
   std::vector<std::pair<unsigned int, unsigned int>> result;
 
-  for (unsigned int i = 0 ; i < WIDTH ; ++i)
-    for (unsigned int j = 0 ; j < HEIGHT ; ++j)
+  for (unsigned int i = 0 ; i < HEIGHT ; ++i)
+    for (unsigned int j = 0 ; j < WIDTH ; ++j)
       if (dist_coord(std::pair(i,j), std::pair(STARTING_X, STARTING_Y)) == dist)
         result.push_back(std::pair(i,j));
   return result;
@@ -167,21 +168,24 @@ std::vector<std::pair<unsigned int, unsigned int>> get_all_coord_from_dist(unsig
 
 int main()
 {
+  // Init seed
+  srand(time(NULL));
+
   // Init map
   Map map;
-  map.resize(WIDTH);
-  for (unsigned int i = 0 ; i < WIDTH ; ++i)
-    map[i].resize(HEIGHT, Biome::Undefined);
+  map.resize(HEIGHT);
+  for (unsigned int i = 0 ; i < HEIGHT ; ++i)
+    map[i].resize(WIDTH, Biome::Undefined);
   map[STARTING_X][STARTING_Y] = STARTING_BIOME;
 
   // Pre-draw
   std::cout << std::endl << std::endl << "\033[30m";
-  for (unsigned int i = 0 ; i < WIDTH+2; ++i)
+  for (unsigned int i = 0 ; i < WIDTH*2+3; ++i)
     std::cout << "#";
   std::cout << std::endl;
 
   // Main loop
-  for (unsigned int dist = 1 ; dist < WIDTH+HEIGHT ; ++dist)
+  for (unsigned int dist = 1 ; dist < HEIGHT+WIDTH ; ++dist)
   {
     for (auto c: get_all_coord_from_dist(dist))
     {
@@ -192,11 +196,11 @@ int main()
       
       if (c.first > 0)
         b_west = map[c.first-1][c.second];
-      if (c.first < WIDTH-1)
+      if (c.first < HEIGHT-1)
         b_east = map[c.first+1][c.second];
       if (c.second > 0)
         b_north = map[c.first][c.second-1];
-      if (c.second < HEIGHT-1)
+      if (c.second < WIDTH-1)
         b_south = map[c.first][c.second+1];
 
       map[c.first][c.second] = get_neighbor(b_north, b_south, b_east, b_west);
@@ -204,9 +208,9 @@ int main()
   }
 
   // Post processing: delete single tiles
-  for (unsigned int i = 0 ; i < WIDTH; ++i)
+  for (unsigned int i = 0 ; i < HEIGHT; ++i)
   {
-    for (unsigned int j = 0 ; j < HEIGHT; ++j)
+    for (unsigned int j = 0 ; j < WIDTH; ++j)
     {
       Biome b = map[i][j];
       Biome b_north = Biome::Undefined;
@@ -216,11 +220,11 @@ int main()
       
       if (i > 0)
         b_west = map[i-1][j];
-      if (i < WIDTH-1)
+      if (i < HEIGHT-1)
         b_east = map[i+1][j];
       if (j > 0)
         b_north = map[i][j-1];
-      if (j < HEIGHT-1)
+      if (j < WIDTH-1)
         b_south = map[i][j+1];
       
       if (b != b_north &&
@@ -240,16 +244,16 @@ int main()
   }
 
   // Post-draw
-  for (unsigned int i = 0 ; i < WIDTH ; ++i)
+  for (unsigned int i = 0 ; i < HEIGHT ; ++i)
   {
-    std::cout << "\033[30m#";
-    for (unsigned int j = 0 ; j < HEIGHT ; ++j)
+    std::cout << "\033[30m# ";
+    for (unsigned int j = 0 ; j < WIDTH ; ++j)
       std::cout << biome_to_char(map[i][j]);
     std::cout << "\033[30m#" << std::endl;
   }
 
   std::cout << "\033[30m";
-  for (unsigned int i = 0 ; i < WIDTH+2; ++i)
+  for (unsigned int i = 0 ; i < WIDTH*2+3; ++i)
     std::cout << "#";
   std::cout << std::endl;
 
