@@ -57,11 +57,11 @@ unsigned int get_neightboring_weight(Biome ref, Biome neigh)
     case Biome::Mountain:
       switch (neigh) {
         case Biome::Plain:
-          return 5;
+          return 10;
         case Biome::Forest:
-          return 5;
+          return 10;
         case Biome::Mountain:
-          return 89;
+          return 79;
         case Biome::Sea:
           return 1;
         default:
