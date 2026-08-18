@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <cstdlib>
+#include <thread>
+#include <chrono>
 
 enum class Biome {
   Undefined,
@@ -11,11 +13,11 @@ enum class Biome {
 };
 
 
-const unsigned int WIDTH = 12;
-const unsigned int HEIGHT = 12;
-const unsigned int STARTING_X = 6;
-const unsigned int STARTING_Y = 6;
-const Biome STARTING_BIOME = Biome::Mountain;
+const unsigned int WIDTH = 32;
+const unsigned int HEIGHT = 32;
+const unsigned int STARTING_X = 12;
+const unsigned int STARTING_Y = 12;
+const Biome STARTING_BIOME = Biome::Plain;
 
 typedef std::vector<std::vector<Biome>> Map;
 
@@ -26,13 +28,13 @@ unsigned int get_neightboring_weight(Biome ref, Biome neigh)
     case Biome::Plain:
       switch (neigh) {
         case Biome::Plain:
-          return 8;
+          return 85;
         case Biome::Forest:
-          return 4;
+          return 8;
         case Biome::Mountain:
-          return 2;
+          return 5;
         case Biome::Sea:
-          return 1;
+          return 2;
         default:
           return 0;
       }
@@ -40,13 +42,13 @@ unsigned int get_neightboring_weight(Biome ref, Biome neigh)
     case Biome::Forest:
       switch (neigh) {
         case Biome::Plain:
-          return 4;
-        case Biome::Forest:
           return 8;
+        case Biome::Forest:
+          return 85;
         case Biome::Mountain:
-          return 2;
+          return 5;
         case Biome::Sea:
-          return 1;
+          return 2;
         default:
           return 0;
       }
@@ -54,11 +56,11 @@ unsigned int get_neightboring_weight(Biome ref, Biome neigh)
     case Biome::Mountain:
       switch (neigh) {
         case Biome::Plain:
-          return 2;
+          return 5;
         case Biome::Forest:
-          return 4;
+          return 5;
         case Biome::Mountain:
-          return 6;
+          return 89;
         case Biome::Sea:
           return 1;
         default:
@@ -68,13 +70,13 @@ unsigned int get_neightboring_weight(Biome ref, Biome neigh)
     case Biome::Sea:
       switch (neigh) {
         case Biome::Plain:
-          return 0;
+          return 2;
         case Biome::Forest:
-          return 0;
+          return 2;
         case Biome::Mountain:
-          return 0;
+          return 1;
         case Biome::Sea:
-          return 8;
+          return 145;
         default:
           return 0;
       }
@@ -129,19 +131,19 @@ Biome get_neighbor(Biome b1, Biome b2, Biome b3, Biome b4)
   return Biome::Sea;
 }
 
-char biome_to_char(Biome b)
+std::string biome_to_char(Biome b)
 {
   switch (b) {
     case Biome::Plain:
-      return ' ';
+      return "\033[0m.\033[0m";
     case Biome::Forest:
-      return '|';
+      return "\033[32m|\033[0m";
     case Biome::Mountain:
-      return '^';
+      return "\033[33m^\033[0m";
     case Biome::Sea:
-      return '~';
+      return "\033[36m~\033[0m";
     default:
-      return 'X';
+      return "\033[0m \033[0m";
   }
 }
 
@@ -169,7 +171,14 @@ int main()
   Map map;
   map.resize(WIDTH);
   for (unsigned int i = 0 ; i < WIDTH ; ++i)
-    map[i].resize(HEIGHT, STARTING_BIOME);
+    map[i].resize(HEIGHT, Biome::Undefined);
+  map[STARTING_X][STARTING_Y] = STARTING_BIOME;
+
+  // Pre-draw
+  std::cout << std::endl << std::endl << "\033[30m";
+  for (unsigned int i = 0 ; i < WIDTH+2; ++i)
+    std::cout << "#";
+  std::cout << std::endl;
 
   // Main loop
   for (unsigned int dist = 1 ; dist < WIDTH+HEIGHT ; ++dist)
@@ -192,14 +201,24 @@ int main()
 
       map[c.first][c.second] = get_neighbor(b_north, b_south, b_east, b_west);
     }
+
+
   }
 
+  // Post-draw
   for (unsigned int i = 0 ; i < WIDTH ; ++i)
   {
+    std::cout << "\033[30m#";
     for (unsigned int j = 0 ; j < HEIGHT ; ++j)
       std::cout << biome_to_char(map[i][j]);
-    std::cout << std::endl;
+    std::cout << "\033[30m#" << std::endl;
   }
+
+  std::cout << "\033[30m";
+  for (unsigned int i = 0 ; i < WIDTH+2; ++i)
+    std::cout << "#";
+  std::cout << std::endl;
+
 
   return 0;
 }
