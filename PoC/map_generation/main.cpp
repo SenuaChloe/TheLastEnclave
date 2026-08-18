@@ -136,7 +136,7 @@ std::string biome_to_char(Biome b)
 {
   switch (b) {
     case Biome::Plain:
-      return "\033[0m. \033[0m";
+      return "\033[0m  \033[0m";
     case Biome::Forest:
       return "\033[32m| \033[0m";
     case Biome::Mountain:
@@ -144,7 +144,7 @@ std::string biome_to_char(Biome b)
     case Biome::Sea:
       return "\033[36m~ \033[0m";
     default:
-      return "\033[0m  \033[0m";
+      return "\033[30mX \033[0m";
   }
 }
 
@@ -177,6 +177,16 @@ int main()
   for (unsigned int i = 0 ; i < HEIGHT ; ++i)
     map[i].resize(WIDTH, Biome::Undefined);
   map[STARTING_X][STARTING_Y] = STARTING_BIOME;
+  for (unsigned int i = 0 ; i < HEIGHT ; ++i)
+  {
+    map[i][0] = Biome::Sea;
+    map[i][WIDTH-1] = Biome::Sea;
+  }
+  for (unsigned int j = 0 ; j < WIDTH ; ++j)
+  {
+    map[0][j] = Biome::Sea;
+    map[HEIGHT-1][j] = Biome::Sea;
+  }
 
   // Pre-draw
   std::cout << std::endl << std::endl << "\033[30m";
