@@ -201,8 +201,42 @@ int main()
 
       map[c.first][c.second] = get_neighbor(b_north, b_south, b_east, b_west);
     }
+  }
 
-
+  // Post processing: delete single tiles
+  for (unsigned int i = 0 ; i < WIDTH; ++i)
+  {
+    for (unsigned int j = 0 ; j < HEIGHT; ++j)
+    {
+      Biome b = map[i][j];
+      Biome b_north = Biome::Undefined;
+      Biome b_south = Biome::Undefined;
+      Biome b_east = Biome::Undefined;
+      Biome b_west = Biome::Undefined;
+      
+      if (i > 0)
+        b_west = map[i-1][j];
+      if (i < WIDTH-1)
+        b_east = map[i+1][j];
+      if (j > 0)
+        b_north = map[i][j-1];
+      if (j < HEIGHT-1)
+        b_south = map[i][j+1];
+      
+      if (b != b_north &&
+          b != b_south &&
+          b != b_east &&
+          b != b_west)
+      {
+        switch (rand()%4)
+        {
+          case 0: map[i][j] = b_north; break;
+          case 1: map[i][j] = b_south; break;
+          case 2: map[i][j] = b_east; break;
+          case 3: map[i][j] = b_west; break;
+        }
+      }
+    }
   }
 
   // Post-draw
