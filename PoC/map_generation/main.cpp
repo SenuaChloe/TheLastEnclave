@@ -10,6 +10,13 @@ enum class Biome {
   Sea = 99,
 };
 
+
+const unsigned int WIDTH = 12;
+const unsigned int HEIGHT = 12;
+const unsigned int STARTING_X = 6;
+const unsigned int STARTING_Y = 6;
+const Biome STARTING_BIOME = Biome::Mountain;
+
 typedef std::vector<std::vector<Biome>> Map;
 
 unsigned int get_neightboring_weight(Biome ref, Biome neigh)
@@ -19,11 +26,11 @@ unsigned int get_neightboring_weight(Biome ref, Biome neigh)
     case Biome::Plain:
       switch (neigh) {
         case Biome::Plain:
-          return 1;
+          return 8;
         case Biome::Forest:
-          return 1;
+          return 4;
         case Biome::Mountain:
-          return 1;
+          return 2;
         case Biome::Sea:
           return 1;
         default:
@@ -33,11 +40,11 @@ unsigned int get_neightboring_weight(Biome ref, Biome neigh)
     case Biome::Forest:
       switch (neigh) {
         case Biome::Plain:
-          return 1;
+          return 4;
         case Biome::Forest:
-          return 1;
+          return 8;
         case Biome::Mountain:
-          return 1;
+          return 2;
         case Biome::Sea:
           return 1;
         default:
@@ -47,11 +54,11 @@ unsigned int get_neightboring_weight(Biome ref, Biome neigh)
     case Biome::Mountain:
       switch (neigh) {
         case Biome::Plain:
-          return 1;
+          return 2;
         case Biome::Forest:
-          return 1;
+          return 4;
         case Biome::Mountain:
-          return 1;
+          return 6;
         case Biome::Sea:
           return 1;
         default:
@@ -61,13 +68,13 @@ unsigned int get_neightboring_weight(Biome ref, Biome neigh)
     case Biome::Sea:
       switch (neigh) {
         case Biome::Plain:
-          return 1;
+          return 0;
         case Biome::Forest:
-          return 1;
+          return 0;
         case Biome::Mountain:
-          return 1;
+          return 0;
         case Biome::Sea:
-          return 1;
+          return 8;
         default:
           return 0;
       }
@@ -122,9 +129,78 @@ Biome get_neighbor(Biome b1, Biome b2, Biome b3, Biome b4)
   return Biome::Sea;
 }
 
+char biome_to_char(Biome b)
+{
+  switch (b) {
+    case Biome::Plain:
+      return ' ';
+    case Biome::Forest:
+      return '|';
+    case Biome::Mountain:
+      return '^';
+    case Biome::Sea:
+      return '~';
+    default:
+      return 'X';
+  }
+}
+
+unsigned int dist_coord(std::pair<unsigned int, unsigned int> lhs, std::pair<unsigned int, unsigned int> rhs)
+{
+  return
+    std::max(lhs.first, rhs.first) - std::min(lhs.first, rhs.first) +
+    std::max(lhs.second, rhs.second) - std::min(lhs.second, rhs.second);
+} 
+
+std::vector<std::pair<unsigned int, unsigned int>> get_all_coord_from_dist(unsigned int dist)
+{
+  std::vector<std::pair<unsigned int, unsigned int>> result;
+
+  for (unsigned int i = 0 ; i < WIDTH ; ++i)
+    for (unsigned int j = 0 ; j < HEIGHT ; ++j)
+      if (dist_coord(std::pair(i,j), std::pair(STARTING_X, STARTING_Y)) == dist)
+        result.push_back(std::pair(i,j));
+  return result;
+}
+
 int main()
 {
-  get_neighbor(Biome::Forest, Biome::Plain, Biome::Undefined, Biome::Undefined);
+  // Init map
+  Map map;
+  map.resize(WIDTH);
+  for (unsigned int i = 0 ; i < WIDTH ; ++i)
+    map[i].resize(HEIGHT, STARTING_BIOME);
+
+  // Main loop
+  for (unsigned int dist = 1 ; dist < WIDTH+HEIGHT ; ++dist)
+  {
+    for (auto c: get_all_coord_from_dist(dist))
+    {
+      Biome b_north = Biome::Undefined;
+      Biome b_south = Biome::Undefined;
+      Biome b_east = Biome::Undefined;
+      Biome b_west = Biome::Undefined;
+      
+      if (c.first > 0)
+        b_west = map[c.first-1][c.second];
+      if (c.first < WIDTH-1)
+        b_east = map[c.first+1][c.second];
+      if (c.second > 0)
+        b_north = map[c.first][c.second-1];
+      if (c.second < HEIGHT-1)
+        b_south = map[c.first][c.second+1];
+
+      map[c.first][c.second] = get_neighbor(b_north, b_south, b_east, b_west);
+    }
+  }
+
+  for (unsigned int i = 0 ; i < WIDTH ; ++i)
+  {
+    for (unsigned int j = 0 ; j < HEIGHT ; ++j)
+      std::cout << biome_to_char(map[i][j]);
+    std::cout << std::endl;
+  }
+
   return 0;
 }
 
