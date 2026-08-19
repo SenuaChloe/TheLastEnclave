@@ -4,14 +4,81 @@
 #include <ctime>
 #include <thread>
 #include <chrono>
+#include <map>
 
 enum class Biome {
   Undefined,
   Plain,
   Forest,
   Mountain,
-  Sea = 99,
+  City,
+  Swamp,
+  Desert,
+  Tundra,
+  Sea,
 };
+
+std::string get_biome_color(Biome b)
+{
+  switch (b)
+  {
+    case Biome::Plain:
+      return "37";
+    case Biome::Forest:
+      return "92";
+    case Biome::Mountain:
+      return "33";
+    case Biome::City:
+      return "31";
+    case Biome::Swamp:
+      return "32";
+    case Biome::Desert:
+      return "93";
+    case Biome::Tundra:
+      return "0";
+    case Biome::Sea:
+      return "36";
+    default:
+      return "95";
+  }
+}
+
+std::string get_biome_character(Biome b)
+{
+  switch (b)
+  {
+    case Biome::Plain:
+      return "  ";
+    case Biome::Forest:
+      return "| ";
+    case Biome::Mountain:
+      return "^ ";
+    case Biome::City:
+      return "X ";
+    case Biome::Swamp:
+      return "$ ";
+    case Biome::Desert:
+      return ". ";
+    case Biome::Tundra:
+      return "* ";
+    case Biome::Sea:
+      return "~ ";
+    default:
+      return "= ";
+  }
+  
+}
+
+std::string biome_to_char(Biome b)
+{
+  std::string res;
+  res += "\033[";
+  res += get_biome_color(b);
+  res += "m";
+  res += get_biome_character(b);
+  res += "\033[0m";
+  return res;
+}
 
 
 const unsigned int WIDTH = 48;
@@ -20,72 +87,106 @@ const unsigned int STARTING_X = 24;
 const unsigned int STARTING_Y = 24;
 const Biome STARTING_BIOME = Biome::Plain;
 
+std::map<Biome, std::map<Biome, unsigned int>> G_WEIGHTS;
+
+void init_weights()
+{
+  G_WEIGHTS[Biome::Undefined][Biome::Undefined] = 0;
+  G_WEIGHTS[Biome::Undefined][Biome::Plain]     = 0;
+  G_WEIGHTS[Biome::Undefined][Biome::Forest]    = 0;
+  G_WEIGHTS[Biome::Undefined][Biome::Mountain]  = 0;
+  G_WEIGHTS[Biome::Undefined][Biome::City]      = 0;
+  G_WEIGHTS[Biome::Undefined][Biome::Swamp]     = 0;
+  G_WEIGHTS[Biome::Undefined][Biome::Desert]    = 0;
+  G_WEIGHTS[Biome::Undefined][Biome::Tundra]    = 0;
+  G_WEIGHTS[Biome::Undefined][Biome::Sea]       = 0;
+
+  G_WEIGHTS[Biome::Plain][Biome::Undefined] = 0;
+  G_WEIGHTS[Biome::Plain][Biome::Plain]     = 180;
+  G_WEIGHTS[Biome::Plain][Biome::Forest]    = 7;
+  G_WEIGHTS[Biome::Plain][Biome::Mountain]  = 4;
+  G_WEIGHTS[Biome::Plain][Biome::City]      = 2;
+  G_WEIGHTS[Biome::Plain][Biome::Swamp]     = 2;
+  G_WEIGHTS[Biome::Plain][Biome::Desert]    = 2;
+  G_WEIGHTS[Biome::Plain][Biome::Tundra]    = 2;
+  G_WEIGHTS[Biome::Plain][Biome::Sea]       = 1;
+
+  G_WEIGHTS[Biome::Forest][Biome::Undefined] = 0;
+  G_WEIGHTS[Biome::Forest][Biome::Plain]     = 13;
+  G_WEIGHTS[Biome::Forest][Biome::Forest]    = 170;
+  G_WEIGHTS[Biome::Forest][Biome::Mountain]  = 4;
+  G_WEIGHTS[Biome::Forest][Biome::City]      = 3;
+  G_WEIGHTS[Biome::Forest][Biome::Swamp]     = 3;
+  G_WEIGHTS[Biome::Forest][Biome::Desert]    = 3;
+  G_WEIGHTS[Biome::Forest][Biome::Tundra]    = 3;
+  G_WEIGHTS[Biome::Forest][Biome::Sea]       = 1;
+
+  G_WEIGHTS[Biome::Mountain][Biome::Undefined] = 0;
+  G_WEIGHTS[Biome::Mountain][Biome::Plain]     = 16;
+  G_WEIGHTS[Biome::Mountain][Biome::Forest]    = 8;
+  G_WEIGHTS[Biome::Mountain][Biome::Mountain]  = 160;
+  G_WEIGHTS[Biome::Mountain][Biome::City]      = 4;
+  G_WEIGHTS[Biome::Mountain][Biome::Swamp]     = 4;
+  G_WEIGHTS[Biome::Mountain][Biome::Desert]    = 3;
+  G_WEIGHTS[Biome::Mountain][Biome::Tundra]    = 3;
+  G_WEIGHTS[Biome::Mountain][Biome::Sea]       = 2;
+
+  G_WEIGHTS[Biome::City][Biome::Undefined] = 0;
+  G_WEIGHTS[Biome::City][Biome::Plain]     = 90;
+  G_WEIGHTS[Biome::City][Biome::Forest]    = 45;
+  G_WEIGHTS[Biome::City][Biome::Mountain]  = 45;
+  G_WEIGHTS[Biome::City][Biome::City]      = 0;
+  G_WEIGHTS[Biome::City][Biome::Swamp]     = 5;
+  G_WEIGHTS[Biome::City][Biome::Desert]    = 5;
+  G_WEIGHTS[Biome::City][Biome::Tundra]    = 5;
+  G_WEIGHTS[Biome::City][Biome::Sea]       = 5;
+
+  G_WEIGHTS[Biome::Swamp][Biome::Undefined] = 0;
+  G_WEIGHTS[Biome::Swamp][Biome::Plain]     = 8;
+  G_WEIGHTS[Biome::Swamp][Biome::Forest]    = 16;
+  G_WEIGHTS[Biome::Swamp][Biome::Mountain]  = 4;
+  G_WEIGHTS[Biome::Swamp][Biome::City]      = 4;
+  G_WEIGHTS[Biome::Swamp][Biome::Swamp]     = 160;
+  G_WEIGHTS[Biome::Swamp][Biome::Desert]    = 4;
+  G_WEIGHTS[Biome::Swamp][Biome::Tundra]    = 4;
+  G_WEIGHTS[Biome::Swamp][Biome::Sea]       = 0;
+
+  G_WEIGHTS[Biome::Desert][Biome::Undefined] = 0;
+  G_WEIGHTS[Biome::Desert][Biome::Plain]     = 2;
+  G_WEIGHTS[Biome::Desert][Biome::Forest]    = 2;
+  G_WEIGHTS[Biome::Desert][Biome::Mountain]  = 2;
+  G_WEIGHTS[Biome::Desert][Biome::City]      = 2;
+  G_WEIGHTS[Biome::Desert][Biome::Swamp]     = 0;
+  G_WEIGHTS[Biome::Desert][Biome::Desert]    = 190;
+  G_WEIGHTS[Biome::Desert][Biome::Tundra]    = 0;
+  G_WEIGHTS[Biome::Desert][Biome::Sea]       = 3;
+
+  G_WEIGHTS[Biome::Tundra][Biome::Undefined] = 0;
+  G_WEIGHTS[Biome::Tundra][Biome::Plain]     = 1;
+  G_WEIGHTS[Biome::Tundra][Biome::Forest]    = 1;
+  G_WEIGHTS[Biome::Tundra][Biome::Mountain]  = 1;
+  G_WEIGHTS[Biome::Tundra][Biome::City]      = 2;
+  G_WEIGHTS[Biome::Tundra][Biome::Swamp]     = 0;
+  G_WEIGHTS[Biome::Tundra][Biome::Desert]    = 0;
+  G_WEIGHTS[Biome::Tundra][Biome::Tundra]    = 190;
+  G_WEIGHTS[Biome::Tundra][Biome::Sea]       = 5;
+
+  G_WEIGHTS[Biome::Sea][Biome::Undefined] = 0;
+  G_WEIGHTS[Biome::Sea][Biome::Plain]     = 1;
+  G_WEIGHTS[Biome::Sea][Biome::Forest]    = 1;
+  G_WEIGHTS[Biome::Sea][Biome::Mountain]  = 1;
+  G_WEIGHTS[Biome::Sea][Biome::City]      = 2;
+  G_WEIGHTS[Biome::Sea][Biome::Swamp]     = 1;
+  G_WEIGHTS[Biome::Sea][Biome::Desert]    = 1;
+  G_WEIGHTS[Biome::Sea][Biome::Tundra]    = 1;
+  G_WEIGHTS[Biome::Sea][Biome::Sea]       = 200;
+}
+
 typedef std::vector<std::vector<Biome>> Map;
 
 unsigned int get_neightboring_weight(Biome ref, Biome neigh)
 {
-  switch (ref)
-  {
-    case Biome::Plain:
-      switch (neigh) {
-        case Biome::Plain:
-          return 85;
-        case Biome::Forest:
-          return 8;
-        case Biome::Mountain:
-          return 5;
-        case Biome::Sea:
-          return 2;
-        default:
-          return 0;
-      }
-
-    case Biome::Forest:
-      switch (neigh) {
-        case Biome::Plain:
-          return 8;
-        case Biome::Forest:
-          return 85;
-        case Biome::Mountain:
-          return 5;
-        case Biome::Sea:
-          return 2;
-        default:
-          return 0;
-      }
-
-    case Biome::Mountain:
-      switch (neigh) {
-        case Biome::Plain:
-          return 10;
-        case Biome::Forest:
-          return 10;
-        case Biome::Mountain:
-          return 79;
-        case Biome::Sea:
-          return 1;
-        default:
-          return 0;
-      }
-
-    case Biome::Sea:
-      switch (neigh) {
-        case Biome::Plain:
-          return 2;
-        case Biome::Forest:
-          return 2;
-        case Biome::Mountain:
-          return 1;
-        case Biome::Sea:
-          return 145;
-        default:
-          return 0;
-      }
-
-    default:
-      return 0;
-  }
-  return 1;
+  return G_WEIGHTS[ref][neigh];
 }
 
 Biome get_neighbor(Biome b1, Biome b2, Biome b3, Biome b4)
@@ -93,6 +194,10 @@ Biome get_neighbor(Biome b1, Biome b2, Biome b3, Biome b4)
   unsigned int plain_weight = 0;
   unsigned int forest_weight = 0;
   unsigned int mountain_weight = 0;
+  unsigned int city_weight = 0;
+  unsigned int swamp_weight = 0;
+  unsigned int desert_weight = 0;
+  unsigned int tundra_weight = 0;
   unsigned int sea_weight = 0;
 
   plain_weight += get_neightboring_weight(b1, Biome::Plain);
@@ -110,12 +215,40 @@ Biome get_neighbor(Biome b1, Biome b2, Biome b3, Biome b4)
   mountain_weight += get_neightboring_weight(b3, Biome::Mountain);
   mountain_weight += get_neightboring_weight(b4, Biome::Mountain);
   
+  city_weight += get_neightboring_weight(b1, Biome::City);
+  city_weight += get_neightboring_weight(b2, Biome::City);
+  city_weight += get_neightboring_weight(b3, Biome::City);
+  city_weight += get_neightboring_weight(b4, Biome::City);
+  
+  swamp_weight += get_neightboring_weight(b1, Biome::Swamp);
+  swamp_weight += get_neightboring_weight(b2, Biome::Swamp);
+  swamp_weight += get_neightboring_weight(b3, Biome::Swamp);
+  swamp_weight += get_neightboring_weight(b4, Biome::Swamp);
+  
+  desert_weight += get_neightboring_weight(b1, Biome::Desert);
+  desert_weight += get_neightboring_weight(b2, Biome::Desert);
+  desert_weight += get_neightboring_weight(b3, Biome::Desert);
+  desert_weight += get_neightboring_weight(b4, Biome::Desert);
+  
+  tundra_weight += get_neightboring_weight(b1, Biome::Tundra);
+  tundra_weight += get_neightboring_weight(b2, Biome::Tundra);
+  tundra_weight += get_neightboring_weight(b3, Biome::Tundra);
+  tundra_weight += get_neightboring_weight(b4, Biome::Tundra);
+  
   sea_weight += get_neightboring_weight(b1, Biome::Sea);
   sea_weight += get_neightboring_weight(b2, Biome::Sea);
   sea_weight += get_neightboring_weight(b3, Biome::Sea);
   sea_weight += get_neightboring_weight(b4, Biome::Sea);
 
-  unsigned int total = plain_weight + forest_weight + mountain_weight + sea_weight;
+  unsigned int total = 
+    plain_weight + 
+    forest_weight + 
+    mountain_weight + 
+    city_weight +
+    swamp_weight + 
+    desert_weight +
+    tundra_weight +
+    sea_weight;
   unsigned int roll = rand() % total;
 
   if (roll < plain_weight)
@@ -128,24 +261,24 @@ Biome get_neighbor(Biome b1, Biome b2, Biome b3, Biome b4)
 
   if (roll < mountain_weight)
     return Biome::Mountain;
+  roll -= mountain_weight;
+
+  if (roll < city_weight)
+    return Biome::City;
+  roll -= city_weight;
+
+  if (roll < swamp_weight)
+    return Biome::Swamp;
+  roll -= swamp_weight;
+
+  if (roll < desert_weight)
+    return Biome::Desert;
+  roll -= desert_weight;
+
+  if (roll < tundra_weight)
+    return Biome::Tundra;
 
   return Biome::Sea;
-}
-
-std::string biome_to_char(Biome b)
-{
-  switch (b) {
-    case Biome::Plain:
-      return "\033[0m  \033[0m";
-    case Biome::Forest:
-      return "\033[32m| \033[0m";
-    case Biome::Mountain:
-      return "\033[33m^ \033[0m";
-    case Biome::Sea:
-      return "\033[36m~ \033[0m";
-    default:
-      return "\033[30mX \033[0m";
-  }
 }
 
 unsigned int dist_coord(std::pair<unsigned int, unsigned int> lhs, std::pair<unsigned int, unsigned int> rhs)
@@ -170,6 +303,9 @@ int main()
 {
   // Init seed
   srand(time(NULL));
+
+  // Init weights
+  init_weights();
 
   // Init map
   Map map;
@@ -237,7 +373,8 @@ int main()
       if (j < WIDTH-1)
         b_south = map[i][j+1];
       
-      if (b != b_north &&
+      if (b != Biome::City && 
+          b != b_north &&
           b != b_south &&
           b != b_east &&
           b != b_west)
