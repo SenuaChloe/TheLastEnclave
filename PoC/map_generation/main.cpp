@@ -23,7 +23,7 @@ std::string get_biome_color(Biome b)
   switch (b)
   {
     case Biome::Plain:
-      return "37";
+      return "90";
     case Biome::Forest:
       return "92";
     case Biome::Mountain:
@@ -35,7 +35,7 @@ std::string get_biome_color(Biome b)
     case Biome::Desert:
       return "93";
     case Biome::Tundra:
-      return "0";
+      return "37";
     case Biome::Sea:
       return "36";
     default:
@@ -168,12 +168,12 @@ std::map<Biome, std::map<Biome, unsigned int>> G_WEIGHTS = {
   { Biome::Desert, 
     {
       { Biome::Undefined, 0   },
-      { Biome::Plain,     2   },
+      { Biome::Plain,     12  },
       { Biome::Forest,    2   },
       { Biome::Mountain,  2   },
       { Biome::City,      2   },
       { Biome::Swamp,     0   },
-      { Biome::Desert,    190 },
+      { Biome::Desert,    180 },
       { Biome::Tundra,    0   },
       { Biome::Sea,       3   },
     }
@@ -181,13 +181,13 @@ std::map<Biome, std::map<Biome, unsigned int>> G_WEIGHTS = {
   { Biome::Tundra, 
     {
       { Biome::Undefined, 0   },
-      { Biome::Plain,     1   },
+      { Biome::Plain,     11  },
       { Biome::Forest,    1   },
       { Biome::Mountain,  1   },
       { Biome::City,      2   },
       { Biome::Swamp,     0   },
       { Biome::Desert,    0   },
-      { Biome::Tundra,    190 },
+      { Biome::Tundra,    180 },
       { Biome::Sea,       5   },
     }
   },
@@ -357,7 +357,7 @@ int main()
   }
 
   // Pre-draw
-  std::cout << std::endl << std::endl << "\033[30m";
+  std::cout << "\033[" << get_biome_color(Biome::Undefined) << "m";
   for (unsigned int i = 0 ; i < WIDTH*2+3; ++i)
     std::cout << "#";
   std::cout << std::endl;
@@ -430,13 +430,13 @@ int main()
   // Post-draw
   for (unsigned int i = 0 ; i < HEIGHT ; ++i)
   {
-    std::cout << "\033[30m# ";
+    std::cout << "\033[" << get_biome_color(Biome::Undefined) << "m# ";
     for (unsigned int j = 0 ; j < WIDTH ; ++j)
       std::cout << biome_to_char(map[i][j]);
-    std::cout << "\033[30m#" << std::endl;
+    std::cout << "\033[" << get_biome_color(Biome::Undefined) << "m#" << std::endl;
   }
 
-  std::cout << "\033[30m";
+  std::cout << "\033[" << get_biome_color(Biome::Undefined) << "m";
   for (unsigned int i = 0 ; i < WIDTH*2+3; ++i)
     std::cout << "#";
   std::cout << std::endl;
