@@ -83,103 +83,128 @@ std::string biome_to_char(Biome b)
 
 const unsigned int WIDTH = 48;
 const unsigned int HEIGHT = 48;
-const std::vector<std::pair<unsigned int, unsigned int>> STARTING_COORDS = { {12,12}, {12,24}, {24,12}, {24,24} };
-const std::vector<Biome> STARTING_BIOMES = { Biome::Plain, Biome::Tundra, Biome::Desert, Biome::Swamp };
+const std::vector<std::pair<unsigned int, unsigned int>> G_STARTING_COORDS = { {12,12}, {12,24}, {24,12}, {24,24} };
+const std::vector<Biome> G_STARTING_BIOMES = { Biome::Plain, Biome::Tundra, Biome::Desert, Biome::Swamp };
 
-std::map<Biome, std::map<Biome, unsigned int>> G_WEIGHTS;
-
-void init_weights()
-{
-  G_WEIGHTS[Biome::Undefined][Biome::Undefined] = 0;
-  G_WEIGHTS[Biome::Undefined][Biome::Plain]     = 0;
-  G_WEIGHTS[Biome::Undefined][Biome::Forest]    = 0;
-  G_WEIGHTS[Biome::Undefined][Biome::Mountain]  = 0;
-  G_WEIGHTS[Biome::Undefined][Biome::City]      = 0;
-  G_WEIGHTS[Biome::Undefined][Biome::Swamp]     = 0;
-  G_WEIGHTS[Biome::Undefined][Biome::Desert]    = 0;
-  G_WEIGHTS[Biome::Undefined][Biome::Tundra]    = 0;
-  G_WEIGHTS[Biome::Undefined][Biome::Sea]       = 0;
-
-  G_WEIGHTS[Biome::Plain][Biome::Undefined] = 0;
-  G_WEIGHTS[Biome::Plain][Biome::Plain]     = 180;
-  G_WEIGHTS[Biome::Plain][Biome::Forest]    = 7;
-  G_WEIGHTS[Biome::Plain][Biome::Mountain]  = 4;
-  G_WEIGHTS[Biome::Plain][Biome::City]      = 2;
-  G_WEIGHTS[Biome::Plain][Biome::Swamp]     = 2;
-  G_WEIGHTS[Biome::Plain][Biome::Desert]    = 2;
-  G_WEIGHTS[Biome::Plain][Biome::Tundra]    = 2;
-  G_WEIGHTS[Biome::Plain][Biome::Sea]       = 1;
-
-  G_WEIGHTS[Biome::Forest][Biome::Undefined] = 0;
-  G_WEIGHTS[Biome::Forest][Biome::Plain]     = 13;
-  G_WEIGHTS[Biome::Forest][Biome::Forest]    = 170;
-  G_WEIGHTS[Biome::Forest][Biome::Mountain]  = 4;
-  G_WEIGHTS[Biome::Forest][Biome::City]      = 3;
-  G_WEIGHTS[Biome::Forest][Biome::Swamp]     = 3;
-  G_WEIGHTS[Biome::Forest][Biome::Desert]    = 3;
-  G_WEIGHTS[Biome::Forest][Biome::Tundra]    = 3;
-  G_WEIGHTS[Biome::Forest][Biome::Sea]       = 1;
-
-  G_WEIGHTS[Biome::Mountain][Biome::Undefined] = 0;
-  G_WEIGHTS[Biome::Mountain][Biome::Plain]     = 16;
-  G_WEIGHTS[Biome::Mountain][Biome::Forest]    = 8;
-  G_WEIGHTS[Biome::Mountain][Biome::Mountain]  = 160;
-  G_WEIGHTS[Biome::Mountain][Biome::City]      = 4;
-  G_WEIGHTS[Biome::Mountain][Biome::Swamp]     = 4;
-  G_WEIGHTS[Biome::Mountain][Biome::Desert]    = 3;
-  G_WEIGHTS[Biome::Mountain][Biome::Tundra]    = 3;
-  G_WEIGHTS[Biome::Mountain][Biome::Sea]       = 2;
-
-  G_WEIGHTS[Biome::City][Biome::Undefined] = 0;
-  G_WEIGHTS[Biome::City][Biome::Plain]     = 90;
-  G_WEIGHTS[Biome::City][Biome::Forest]    = 45;
-  G_WEIGHTS[Biome::City][Biome::Mountain]  = 45;
-  G_WEIGHTS[Biome::City][Biome::City]      = 0;
-  G_WEIGHTS[Biome::City][Biome::Swamp]     = 5;
-  G_WEIGHTS[Biome::City][Biome::Desert]    = 5;
-  G_WEIGHTS[Biome::City][Biome::Tundra]    = 5;
-  G_WEIGHTS[Biome::City][Biome::Sea]       = 5;
-
-  G_WEIGHTS[Biome::Swamp][Biome::Undefined] = 0;
-  G_WEIGHTS[Biome::Swamp][Biome::Plain]     = 8;
-  G_WEIGHTS[Biome::Swamp][Biome::Forest]    = 16;
-  G_WEIGHTS[Biome::Swamp][Biome::Mountain]  = 4;
-  G_WEIGHTS[Biome::Swamp][Biome::City]      = 4;
-  G_WEIGHTS[Biome::Swamp][Biome::Swamp]     = 160;
-  G_WEIGHTS[Biome::Swamp][Biome::Desert]    = 4;
-  G_WEIGHTS[Biome::Swamp][Biome::Tundra]    = 4;
-  G_WEIGHTS[Biome::Swamp][Biome::Sea]       = 0;
-
-  G_WEIGHTS[Biome::Desert][Biome::Undefined] = 0;
-  G_WEIGHTS[Biome::Desert][Biome::Plain]     = 2;
-  G_WEIGHTS[Biome::Desert][Biome::Forest]    = 2;
-  G_WEIGHTS[Biome::Desert][Biome::Mountain]  = 2;
-  G_WEIGHTS[Biome::Desert][Biome::City]      = 2;
-  G_WEIGHTS[Biome::Desert][Biome::Swamp]     = 0;
-  G_WEIGHTS[Biome::Desert][Biome::Desert]    = 190;
-  G_WEIGHTS[Biome::Desert][Biome::Tundra]    = 0;
-  G_WEIGHTS[Biome::Desert][Biome::Sea]       = 3;
-
-  G_WEIGHTS[Biome::Tundra][Biome::Undefined] = 0;
-  G_WEIGHTS[Biome::Tundra][Biome::Plain]     = 1;
-  G_WEIGHTS[Biome::Tundra][Biome::Forest]    = 1;
-  G_WEIGHTS[Biome::Tundra][Biome::Mountain]  = 1;
-  G_WEIGHTS[Biome::Tundra][Biome::City]      = 2;
-  G_WEIGHTS[Biome::Tundra][Biome::Swamp]     = 0;
-  G_WEIGHTS[Biome::Tundra][Biome::Desert]    = 0;
-  G_WEIGHTS[Biome::Tundra][Biome::Tundra]    = 190;
-  G_WEIGHTS[Biome::Tundra][Biome::Sea]       = 5;
-
-  G_WEIGHTS[Biome::Sea][Biome::Undefined] = 0;
-  G_WEIGHTS[Biome::Sea][Biome::Plain]     = 1;
-  G_WEIGHTS[Biome::Sea][Biome::Forest]    = 1;
-  G_WEIGHTS[Biome::Sea][Biome::Mountain]  = 1;
-  G_WEIGHTS[Biome::Sea][Biome::City]      = 2;
-  G_WEIGHTS[Biome::Sea][Biome::Swamp]     = 1;
-  G_WEIGHTS[Biome::Sea][Biome::Desert]    = 1;
-  G_WEIGHTS[Biome::Sea][Biome::Tundra]    = 1;
-  G_WEIGHTS[Biome::Sea][Biome::Sea]       = 200;
-}
+std::map<Biome, std::map<Biome, unsigned int>> G_WEIGHTS = {
+  { Biome::Undefined, 
+    {
+      { Biome::Undefined, 0   },
+      { Biome::Plain,     0   },
+      { Biome::Forest,    0   },
+      { Biome::Mountain,  0   },
+      { Biome::City,      0   },
+      { Biome::Swamp,     0   },
+      { Biome::Desert,    0   },
+      { Biome::Tundra,    0   },
+      { Biome::Sea,       0   },
+    }
+  },
+  { Biome::Plain, 
+    {
+      { Biome::Undefined, 0   },
+      { Biome::Plain,     180 },
+      { Biome::Forest,    7   },
+      { Biome::Mountain,  4   },
+      { Biome::City,      2   },
+      { Biome::Swamp,     2   },
+      { Biome::Desert,    2   },
+      { Biome::Tundra,    2   },
+      { Biome::Sea,       1   },
+    }
+  },
+  { Biome::Forest, 
+    {
+      { Biome::Undefined, 0   },
+      { Biome::Plain,     13  },
+      { Biome::Forest,    170 },
+      { Biome::Mountain,  4   },
+      { Biome::City,      3   },
+      { Biome::Swamp,     3   },
+      { Biome::Desert,    3   },
+      { Biome::Tundra,    3   },
+      { Biome::Sea,       1   },
+    }
+  },
+  { Biome::Mountain, 
+    {
+      { Biome::Undefined, 0   },
+      { Biome::Plain,     16  },
+      { Biome::Forest,    8   },
+      { Biome::Mountain,  160 },
+      { Biome::City,      4   },
+      { Biome::Swamp,     4   },
+      { Biome::Desert,    3   },
+      { Biome::Tundra,    3   },
+      { Biome::Sea,       2   },
+    }
+  },
+  { Biome::City, 
+    {
+      { Biome::Undefined, 0   },
+      { Biome::Plain,     90  },
+      { Biome::Forest,    45  },
+      { Biome::Mountain,  0   },
+      { Biome::City,      5   },
+      { Biome::Swamp,     5   },
+      { Biome::Desert,    5   },
+      { Biome::Tundra,    5   },
+      { Biome::Sea,       5   },
+    }
+  },
+  { Biome::Swamp, 
+    {
+      { Biome::Undefined, 0   },
+      { Biome::Plain,     8   },
+      { Biome::Forest,    16  },
+      { Biome::Mountain,  4   },
+      { Biome::City,      4   },
+      { Biome::Swamp,     160 },
+      { Biome::Desert,    4   },
+      { Biome::Tundra,    4   },
+      { Biome::Sea,       0   },
+    }
+  },
+  { Biome::Desert, 
+    {
+      { Biome::Undefined, 0   },
+      { Biome::Plain,     2   },
+      { Biome::Forest,    2   },
+      { Biome::Mountain,  2   },
+      { Biome::City,      2   },
+      { Biome::Swamp,     0   },
+      { Biome::Desert,    190 },
+      { Biome::Tundra,    0   },
+      { Biome::Sea,       3   },
+    }
+  },
+  { Biome::Tundra, 
+    {
+      { Biome::Undefined, 0   },
+      { Biome::Plain,     1   },
+      { Biome::Forest,    1   },
+      { Biome::Mountain,  1   },
+      { Biome::City,      2   },
+      { Biome::Swamp,     0   },
+      { Biome::Desert,    0   },
+      { Biome::Tundra,    190 },
+      { Biome::Sea,       5   },
+    }
+  },
+  { Biome::Sea, 
+    {
+      { Biome::Undefined, 0   },
+      { Biome::Plain,     2   },
+      { Biome::Forest,    2   },
+      { Biome::Mountain,  2   },
+      { Biome::City,      3   },
+      { Biome::Swamp,     2   },
+      { Biome::Desert,    2   },
+      { Biome::Tundra,    2   },
+      { Biome::Sea,       285 },
+    }
+  },
+};
 
 typedef std::vector<std::vector<Biome>> Map;
 
@@ -296,8 +321,8 @@ std::vector<std::pair<unsigned int, unsigned int>> get_all_coord_from_dist(unsig
     for (unsigned int j = 0 ; j < WIDTH ; ++j)
     {
       bool is_dist = false;
-      for (unsigned int i = 0 ; i < STARTING_COORDS.size() ; ++i)
-        if (dist_coord(std::pair(i,j), STARTING_COORDS[i]) == dist)
+      for (unsigned int i = 0 ; i < G_STARTING_COORDS.size() ; ++i)
+        if (dist_coord(std::pair(i,j), G_STARTING_COORDS[i]) == dist)
           is_dist = true;
       if (is_dist)
         result.push_back(std::pair(i,j));
@@ -311,17 +336,14 @@ int main()
   // Init seed
   srand(time(NULL));
 
-  // Init weights
-  init_weights();
-
   // Init map
   Map map;
   map.resize(HEIGHT);
   for (unsigned int i = 0 ; i < HEIGHT ; ++i)
     map[i].resize(WIDTH, Biome::Undefined);
 
-  for (unsigned int i = 0 ; i < std::min(STARTING_COORDS.size(), STARTING_BIOMES.size()) ; ++i)
-    map[STARTING_COORDS[i].first][STARTING_COORDS[i].second] = STARTING_BIOMES[i];
+  for (unsigned int i = 0 ; i < std::min(G_STARTING_COORDS.size(), G_STARTING_BIOMES.size()) ; ++i)
+    map[G_STARTING_COORDS[i].first][G_STARTING_COORDS[i].second] = G_STARTING_BIOMES[i];
   
   for (unsigned int i = 0 ; i < HEIGHT ; ++i)
   {
