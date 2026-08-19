@@ -83,9 +83,8 @@ std::string biome_to_char(Biome b)
 
 const unsigned int WIDTH = 48;
 const unsigned int HEIGHT = 48;
-const unsigned int STARTING_X = 24;
-const unsigned int STARTING_Y = 24;
-const Biome STARTING_BIOME = Biome::Plain;
+const std::vector<std::pair<unsigned int, unsigned int>> STARTING_COORDS = { {12,12}, {12,24}, {24,12}, {24,24} };
+const std::vector<Biome> STARTING_BIOMES = { Biome::Plain, Biome::Tundra, Biome::Desert, Biome::Swamp };
 
 std::map<Biome, std::map<Biome, unsigned int>> G_WEIGHTS;
 
@@ -293,9 +292,17 @@ std::vector<std::pair<unsigned int, unsigned int>> get_all_coord_from_dist(unsig
   std::vector<std::pair<unsigned int, unsigned int>> result;
 
   for (unsigned int i = 0 ; i < HEIGHT ; ++i)
+  {
     for (unsigned int j = 0 ; j < WIDTH ; ++j)
-      if (dist_coord(std::pair(i,j), std::pair(STARTING_X, STARTING_Y)) == dist)
+    {
+      bool is_dist = false;
+      for (unsigned int i = 0 ; i < STARTING_COORDS.size() ; ++i)
+        if (dist_coord(std::pair(i,j), STARTING_COORDS[i]) == dist)
+          is_dist = true;
+      if (is_dist)
         result.push_back(std::pair(i,j));
+    }
+  }
   return result;
 }
 
@@ -312,7 +319,10 @@ int main()
   map.resize(HEIGHT);
   for (unsigned int i = 0 ; i < HEIGHT ; ++i)
     map[i].resize(WIDTH, Biome::Undefined);
-  map[STARTING_X][STARTING_Y] = STARTING_BIOME;
+
+  for (unsigned int i = 0 ; i < std::min(STARTING_COORDS.size(), STARTING_BIOMES.size()) ; ++i)
+    map[STARTING_COORDS[i].first][STARTING_COORDS[i].second] = STARTING_BIOMES[i];
+  
   for (unsigned int i = 0 ; i < HEIGHT ; ++i)
   {
     map[i][0] = Biome::Sea;
@@ -335,6 +345,9 @@ int main()
   {
     for (auto c: get_all_coord_from_dist(dist))
     {
+      if (map[c.first][c.second] != Biome::Undefined)
+        continue;
+
       Biome b_north = Biome::Undefined;
       Biome b_south = Biome::Undefined;
       Biome b_east = Biome::Undefined;
@@ -386,6 +399,8 @@ int main()
           case 2: map[i][j] = b_east; break;
           case 3: map[i][j] = b_west; break;
         }
+        if (map[i][j] == Biome::City)
+          map[i][j] = Biome::Plain;
       }
     }
   }
